@@ -31,6 +31,7 @@ using namespace std;
 // structs for error exceptions.
 struct BadSuit {};
 struct BadNumberDecks {};
+struct InvalidBet {};
 
 // Some global constants.
 const int PLAYER_CHIP = 100;	// Initial number of player's chips.
@@ -243,6 +244,44 @@ public:
     }
 };
 
+
+class GameStatistics {
+private:
+    int totalRounds;
+    int roundsWon;
+    int roundsLost;
+    int roundsTied;
+    int totalChipsWon;
+    int totalChipsLost;
+
+public:
+    GameStatistics() : totalRounds(0), roundsWon(0), roundsLost(0), roundsTied(0), totalChipsWon(0), totalChipsLost(0) {}
+
+    void updateRoundOutcome(bool win, bool tie, int chips) {
+        totalRounds++;
+        if (tie) {
+            roundsTied++;
+        } else if (win) {
+            roundsWon++;
+            totalChipsWon += chips;
+        } else {
+            roundsLost++;
+            totalChipsLost += chips;
+        }
+    }
+
+    void displayStatistics() {
+        cout << "\nGame Statistics:" << endl;
+        cout << "Total Rounds: " << totalRounds << endl;
+        cout << "Rounds Won: " << roundsWon << endl;
+        cout << "Rounds Lost: " << roundsLost << endl;
+        cout << "Rounds Tied: " << roundsTied << endl;
+        cout << "Total Chips Won: " << totalChipsWon << endl;
+        cout << "Total Chips Lost: " << totalChipsLost << endl;
+    }
+};
+
+
 /* Class that represents the game (displaying texts using standard output, 
 * 	and managing the flow of the game using 5 stages).
 * User inputs are obtained also using standard input, and only the first
@@ -266,6 +305,7 @@ class Game {
         static const int MAX_CARDS = 52; // Maximum number of cards
         array<Card, MAX_CARDS> allDealtCards; // Array to store dealt cards
         int dealtCardCount = 0; // Counter for the number of dealt cards
+        GameStatistics stats; //game stats
     public:
         // Constructor.
         Game(): myDecks(), 
@@ -396,6 +436,9 @@ class Game {
                 if (nBet == 0) nBet = 1;
                 if (nBet > nPlayerChip || nBet > nDealerChip) 
                     noChips = true;
+                if (nBet < 1 || nBet > MAX_BET) {
+                    throw InvalidBet();
+                }
             } while (nBet < 1 || nBet > MAX_BET || noChips);
             cout << "You bet " << nBet << " chip";
             cout << (nBet == 1 ? "." : "s.") << endl;
@@ -582,6 +625,8 @@ class Game {
             
             cout << "+++++++++STATISTICS++++++++" << endl;
             
+            stats.displayStatistics();
+            cout << endl;
             displaySuitStatistics(); // Display the suit statistics
             cout << endl;
             displayRoundOutcomes(); // Display the round outcomes
@@ -634,6 +679,14 @@ class Game {
         void takeChips(int amount){
             nPlayerChip += amount;
             nDealerChip -= amount;
+            
+            // Update game statistics
+            if (amount > 0) {
+                stats.updateRoundOutcome(true, false, amount);
+            } else if (amount < 0) {
+                stats.updateRoundOutcome(false, false, -amount);
+            }
+            
         }
         
 };
